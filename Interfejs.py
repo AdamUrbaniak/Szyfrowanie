@@ -37,6 +37,7 @@ def encrypt_file():
 
 def decrypt_file():
     file_path = decrypt_file_label.cget("text")
+    decrypted_data = None  
     if file_path != "Nie wybrano pliku do odszyfrowania":
         if selected_algorithm == "AES":
             entered_key = key_entry.get().strip()
@@ -79,16 +80,16 @@ def decrypt_file():
             try:
                 key = bytes.fromhex(entered_key)
                 success = MyBlowfish.decrypt_blowfish(file_path, key, decrypted_file_path)
-                if decrypted_data is not None:
+                if decrypted_data is success:
                     dirname, filename = os.path.split(file_path)
                     decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
 
                     with open(decrypted_file_path, 'wb') as output_file:
                         output_file.write(decrypted_data)
 
-                    decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
-                else:
                     decrypt_file_label.config(text="Nieprawidłowy klucz lub uszkodzony plik")
+                else:
+                    decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
             except ValueError:
                 decrypt_file_label.config(text="Nieprawidłowy format klucza")
 
