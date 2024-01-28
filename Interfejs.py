@@ -1,8 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
-import MyAES as AES
 import os
+import MyAES as AES
 import MyDES as DES
+import MyBlowfish
+
+selected_algorithm = ""  # Zmienna globalna do przechowywania wybranego algorytmu
 
 def encrypt_file():
     file_path = file_label.cget("text")
@@ -15,10 +18,18 @@ def encrypt_file():
                 display_key = key.hex()
                 key_display.delete(1.0, tk.END)
                 key_display.insert(tk.END, display_key)
-        elif selected_algorithm == "DES":  # Dodaj obsługę DES
+        elif selected_algorithm == "DES":
             dirname, filename = os.path.split(file_path)
             encrypted_file_path = os.path.join(dirname, "Zaszyfrowany_" + filename)
             key = DES.encrypt_des(file_path, encrypted_file_path)
+            if key is not None:
+                display_key = key.hex()
+                key_display.delete(1.0, tk.END)
+                key_display.insert(tk.END, display_key)
+        elif selected_algorithm == "BlowFish":
+            dirname, filename = os.path.split(file_path)
+            encrypted_file_path = os.path.join(dirname, "Zaszyfrowany_" + filename)
+            key = MyBlowfish.encrypt_blowfish(file_path, encrypted_file_path)
             if key is not None:
                 display_key = key.hex()
                 key_display.delete(1.0, tk.END)
@@ -35,16 +46,16 @@ def decrypt_file():
                 if decrypted_data is not None:
                     dirname, filename = os.path.split(file_path)
                     decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
-                    
+
                     with open(decrypted_file_path, 'wb') as output_file:
                         output_file.write(decrypted_data)
-                    
+
                     decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
                 else:
                     decrypt_file_label.config(text="Nieprawidłowy klucz lub uszkodzony plik")
             except ValueError:
                 decrypt_file_label.config(text="Nieprawidłowy format klucza")
-        elif selected_algorithm == "DES":  # Dodaj obsługę DES
+        elif selected_algorithm == "DES":
             entered_key = key_entry.get().strip()
             try:
                 key = bytes.fromhex(entered_key)
@@ -52,16 +63,34 @@ def decrypt_file():
                 if decrypted_data is not None:
                     dirname, filename = os.path.split(file_path)
                     decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
-                    
+
                     with open(decrypted_file_path, 'wb') as output_file:
                         output_file.write(decrypted_data)
-                    
+
                     decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
                 else:
                     decrypt_file_label.config(text="Nieprawidłowy klucz lub uszkodzony plik")
             except ValueError:
                 decrypt_file_label.config(text="Nieprawidłowy format klucza")
+        elif selected_algorithm == "BlowFish":
+            entered_key = key_entry.get().strip()
+            dirname, filename = os.path.split(file_path)
+            decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
+            try:
+                key = bytes.fromhex(entered_key)
+                success = MyBlowfish.decrypt_blowfish(file_path, key, decrypted_file_path)
+                if decrypted_data is not None:
+                    dirname, filename = os.path.split(file_path)
+                    decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
 
+                    with open(decrypted_file_path, 'wb') as output_file:
+                        output_file.write(decrypted_data)
+
+                    decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
+                else:
+                    decrypt_file_label.config(text="Nieprawidłowy klucz lub uszkodzony plik")
+            except ValueError:
+                decrypt_file_label.config(text="Nieprawidłowy format klucza")
 
 def select_file():
     file_path = filedialog.askopenfilename()
@@ -78,7 +107,7 @@ def select_algorithm(alg):
     selected_algorithm = alg
     aes_button.config(relief="sunken" if alg == "AES" else "raised")
     des_button.config(relief="sunken" if alg == "DES" else "raised")
-    rsa_button.config(relief="sunken" if alg == "RSA" else "raised")
+    blowfish_button.config(relief="sunken" if alg == "BlowFish" else "raised")
 
 def copy_key():
     key = key_display.get(1.0, tk.END).strip()  # Usuń dodatkowe spacje i znaki nowej linii
@@ -134,7 +163,7 @@ aes_button.place(x=270, y=260)
 des_button = tk.Button(root, text="DES", command=lambda: select_algorithm("DES"))
 des_button.place(x=310, y=260)
 
-rsa_button = tk.Button(root, text="BlowFish", command=lambda: select_algorithm("RSA"))
-rsa_button.place(x=350, y=260)
+blowfish_button = tk.Button(root, text="BlowFish", command=lambda: select_algorithm("BlowFish"))
+blowfish_button.place(x=350, y=260)
 
 root.mainloop()
