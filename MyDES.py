@@ -1,18 +1,47 @@
 from Crypto.Cipher import DES
-from Crypto.Random import get_random_bytes
 import os
 
-def pad_des(s):
-    return s + (DES.block_size - len(s) % DES.block_size) * chr(DES.block_size - len(s) % DES.block_size)
+def encrypt_des(input_file_path, output_file_path):
+    try:
+        key = os.urandom(8)  # Generuj losowy klucz 64-bitowy (DES używa 56 bitów do szyfrowania)
+        iv = os.urandom(8)  # Generuj losowy IV (Initial Vector) 64-bitowy
+        cipher = DES.new(key, DES.MODE_CBC, iv)
+        
+        with open(input_file_path, 'rb') as file:
+            plaintext = file.read()
 
-def encrypt_des(file_path):
-    key = get_random_bytes(8)  # Klucz 8 bajtów dla DES
-    cipher = DES.new(key, DES.MODE_ECB)
-    with open(file_path, 'rb') as file:
-        plaintext = file.read()
-    ciphertext = cipher.encrypt(pad_des(plaintext))
-    # Zapisz zaszyfrowane dane do nowego pliku
-    encrypted_file_path = file_path + ".zaszyfrowany"
-    with open(encrypted_file_path, 'wb') as file:
-        file.write(ciphertext)
-    return key
+        # Uzupełnij tekst jawnie zgodnie z PKCS7
+        block_size = DES.block_size
+        padding_bytes = block_size - len(plaintext) % block_size
+        plaintext += bytes([padding_bytes] * padding_bytes)
+
+        ciphertext = cipher.encrypt(plaintext)
+
+        # Zapisz IV i zaszyfrowany tekst do pliku
+        with open(output_file_path, 'wb') as output_file:
+            output_file.write(iv + ciphertext)
+
+        return key
+    except Exception as e:
+        print("Błąd podczas szyfrowania DES:", str(e))
+        return None
+
+def decrypt_des(input_file_path, key):
+    try:
+        with open(input_file_path, 'rb') as file:
+            iv = file.read(8)  # Odczytaj IV (64-bitowy)
+            ciphertext = file.read()  # Odczytaj zaszyfrowany tekst
+
+        cipher = DES.new(key, DES.MODE_CBC, iv)
+        plaintext = cipher.decrypt(ciphertext)
+
+        # Usuń padding z tekstu jawnego zgodnie z PKCS7
+        padding_bytes = plaintext[-1]
+        if padding_bytes > DES.block_size:
+            return None  # Nieprawidłowy padding
+        plaintext = plaintext[:-padding_bytes]
+
+        return plaintext
+    except Exception as e:
+        print("Błąd podczas odszyfrowywania DES:", str(e))
+        return None
