@@ -1,46 +1,40 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 import MyAES as AES
-import MyDES as DES
-import MyRSA as RSA
 import os
 
 def encrypt_file():
     file_path = file_label.cget("text")
     if file_path != "Nie wybrano pliku":
         if selected_algorithm == "AES":
-            key = AES.encrypt_aes(file_path, file_path + ".zaszyfrowany")
+            dirname, filename = os.path.split(file_path)
+            encrypted_file_path = os.path.join(dirname, "Zaszyfrowany_" + filename)
+            key = AES.encrypt_aes(file_path, encrypted_file_path)
             if key is not None:
                 display_key = key.hex()
-                key_display.delete(1.0, tk.END)  # Usuń poprzedni klucz
-                key_display.insert(tk.END, display_key)  # Wyświetl nowy klucz
-        # ...
+                key_display.delete(1.0, tk.END)
+                key_display.insert(tk.END, display_key)
 
 def decrypt_file():
     file_path = decrypt_file_label.cget("text")
     if file_path != "Nie wybrano pliku do odszyfrowania":
         if selected_algorithm == "AES":
-            key = AES.decrypt_aes(file_path)
-            display_key = key.hex()
-            decrypted_file_path = os.path.splitext(file_path)[0]  # Usunięcie rozszerzenia ".zaszyfrowany"
-            decrypted_file_path = decrypted_file_path + '.odszyfrowany'  # Dodanie rozszerzenia ".odszyfrowany"
-            key_display.config(text="Klucz: " + display_key)
-            decrypt_file_label.config(text="Nie wybrano pliku do odszyfrowania")
-        elif selected_algorithm == "DES":
-            key = DES.decrypt_des(file_path)
-            display_key = key.hex()
-            decrypted_file_path = os.path.splitext(file_path)[0]  # Usunięcie rozszerzenia ".zaszyfrowany"
-            decrypted_file_path = decrypted_file_path + '.odszyfrowany'  # Dodanie rozszerzenia ".odszyfrowany"
-            key_display.config(text="Klucz: " + display_key)
-            decrypt_file_label.config(text="Nie wybrano pliku do odszyfrowania")
-        elif selected_algorithm == "RSA":
-            # Tutaj dodaj logikę odszyfrowywania RSA
-            display_key = "RSA Key"
-        else:
-            key_display.config(text="Nie wybrano algorytmu szyfrowania")
-            return
-    else:
-        key_display.config(text="Proszę wybrać plik do odszyfrowania")
+            entered_key = key_entry.get().strip()
+            try:
+                key = bytes.fromhex(entered_key)
+                decrypted_data = AES.decrypt_aes(file_path, key)
+                if decrypted_data is not None:
+                    dirname, filename = os.path.split(file_path)
+                    decrypted_file_path = os.path.join(dirname, "Odszyfrowany_" + filename.replace("Zaszyfrowany_", ""))
+                    
+                    with open(decrypted_file_path, 'wb') as output_file:
+                        output_file.write(decrypted_data)
+                    
+                    decrypt_file_label.config(text="Plik odszyfrowany: " + decrypted_file_path)
+                else:
+                    decrypt_file_label.config(text="Nieprawidłowy klucz lub uszkodzony plik")
+            except ValueError:
+                decrypt_file_label.config(text="Nieprawidłowy format klucza")
 
 def select_file():
     file_path = filedialog.askopenfilename()
@@ -60,10 +54,10 @@ def select_algorithm(alg):
     rsa_button.config(relief="sunken" if alg == "RSA" else "raised")
 
 def copy_key():
-    key = key_display.get(1.0, tk.END)  # Pobierz klucz z pola tekstowego
-    root.clipboard_clear()  # Wyczyść schowek
-    root.clipboard_append(key)  # Skopiuj klucz do schowka
-    root.update()  # Zaktualizuj schowek
+    key = key_display.get(1.0, tk.END).strip()  # Usuń dodatkowe spacje i znaki nowej linii
+    root.clipboard_clear()
+    root.clipboard_append(key)
+    root.update()
 
 root = tk.Tk()
 root.title("Bezpieczne Trzymanie Plików")
@@ -81,6 +75,12 @@ select_decrypt_button.pack()
 decrypt_file_label = tk.Label(root, text="Nie wybrano pliku do odszyfrowania")
 decrypt_file_label.pack()
 
+key_entry_label = tk.Label(root, text="Wprowadź klucz do odszyfrowania:")
+key_entry_label.pack()
+
+key_entry = tk.Entry(root, width=40)
+key_entry.pack()
+
 decrypt_button = tk.Button(root, text="Odszyfruj", command=decrypt_file)
 decrypt_button.pack()
 
@@ -91,6 +91,9 @@ algorithms_frame = tk.Frame(root)
 algorithms_frame.pack()
 
 selected_algorithm = None
+
+algo_label = tk.Label(root, text="Wybierz rodzaj szyfrowania:")
+algo_label.pack()
 
 aes_button = tk.Button(algorithms_frame, text="AES", command=lambda: select_algorithm("AES"))
 aes_button.pack(side=tk.LEFT)
