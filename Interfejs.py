@@ -167,4 +167,16 @@ des_button.place(x=310, y=260)
 blowfish_button = tk.Button(root, text="BlowFish", command=lambda: select_algorithm("BlowFish"))
 blowfish_button.place(x=350, y=260)
 
+instruction_text = (
+    "Program szyfruje oraz deszyfruje pliki wskazane przez użytkownika w tym samym "
+    "miejscu, w którym się znajdują. Do zaszyfrowanego pliku dodawane jest słowo "
+    "'Zaszyfrowany' na początku pliku, a do odszyfrowanego pliku słowo 'Odszyfrowany' "
+    "na początku pliku. Program wyświetla użytkownikowi klucz do odszyfrowania pliku, "
+    "należy go skopiować w bezpieczne miejsce, aby móc odszyfrować plik. Klucz należy "
+    "wpisać w odpowiednie miejsce w programie i nacisnąć guzik 'Odszyfruj'. Pamiętaj zaznaczyć z jakiego szyfrowania chcesz korzystać!"
+)
+
+instruction_label = tk.Label(root, text=instruction_text, wraplength=500)  # Ustaw odpowiednią długość zawijania
+instruction_label.place(x=80, y=60)  # Ustaw odpowiednie położenie etykiety
+
 root.mainloop()
